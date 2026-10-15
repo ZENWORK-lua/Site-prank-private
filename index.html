@@ -2,102 +2,303 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Güven & Analiz Testi 🎭</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Apex Clicker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background: #022c22; color: white; font-family: system-ui, -apple-system, sans-serif; }
-    .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+    * { select-none: none; -webkit-user-select: none; box-sizing: border-box; }
+    body { background-color: #000000; color: #ffffff; overflow: hidden; touch-action: manipulation; font-family: system-ui, -apple-system, sans-serif; }
+
+    #space-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    /* Küçülme ve Büyüme Efekti */
+    .click-button {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(20px);
+      border: 2px solid #22c55e;
+      box-shadow: 0 0 30px rgba(34, 197, 94, 0.2), inset 0 0 15px rgba(34, 197, 94, 0.1);
+      transition: transform 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.1s ease;
+      transform: scale(1);
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.4); border-radius: 4px; }
   </style>
 </head>
-<body class="h-screen w-screen flex items-center justify-center p-4 overflow-hidden relative">
+<body class="w-screen h-screen relative flex flex-col items-center justify-between p-6">
 
-  <!-- Arka Plan Süzülen Işıklar -->
-  <div class="absolute w-72 h-72 bg-emerald-500/20 rounded-full blur-3xl -top-10 -left-10 animate-pulse"></div>
-  <div class="absolute w-72 h-72 bg-teal-500/20 rounded-full blur-3xl -bottom-10 -right-10 animate-pulse"></div>
+  <canvas id="space-canvas"></canvas>
 
-  <!-- Ana Kart -->
-  <div id="card" class="glass w-full max-w-md p-8 rounded-3xl text-center shadow-2xl relative z-10">
-    
-    <!-- Step 1: İsim Alma -->
-    <div id="step1">
-      <div class="text-4xl mb-3">🤖</div>
-      <h1 class="text-2xl font-bold mb-2">AI Güven Analizi</h1>
-      <p class="text-white/60 text-sm mb-6">Yapay zeka veritabanı üzerinden arkadaşlık katsayını analiz ediyoruz.</p>
-      
-      <input id="userName" type="text" placeholder="Adını ve Soyadını Yaz..." class="w-full bg-white/10 border border-white/20 rounded-2xl p-4 mb-4 text-white text-center focus:outline-none focus:border-emerald-400 placeholder-white/30">
-      
-      <button onclick="startAnalysis()" class="w-full bg-emerald-500 hover:bg-emerald-600 font-bold py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/30 active:scale-95">
-        Analizi Başlat 🚀
-      </button>
-    </div>
+  <header class="w-full max-w-md flex justify-end z-10">
+    <button onclick="openLeaderboard()" class="glass px-4 py-2.5 rounded-2xl flex items-center gap-2 text-xs font-mono font-bold tracking-wider hover:border-white/30 active:scale-95 transition-all">
+      🏆 <span class="text-green-400">LİDERLİK</span>
+    </button>
+  </header>
 
-    <!-- Step 2: Tarama Yükleniyor -->
-    <div id="step2" class="hidden">
-      <div class="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-6"></div>
-      <h2 class="text-xl font-bold mb-2">Veriler Taranıyor...</h2>
-      <p id="loadingText" class="text-emerald-400 text-sm font-mono">Sosyal medya geçmişi çekiliyor...</p>
-    </div>
-
-    <!-- Step 3: Sonuç (Troll Ekranı) -->
-    <div id="step3" class="hidden">
-      <div class="text-5xl mb-3">⚠️</div>
-      <h2 id="resultTitle" class="text-2xl font-bold text-red-400 mb-2">KRİTİK UYARI!</h2>
-      <div class="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 my-4 text-left text-sm space-y-2">
-        <p><strong>Hedef:</strong> <span id="targetName" class="text-emerald-300"></span></p>
-        <p><strong>Güvenilirlik Skoru:</strong> <span class="text-red-400 font-bold">%12 (Aşırı Tehlikeli)</span></p>
-        <p><strong>AI Tespiti:</strong> <span id="trollText" class="text-white/80"></span></p>
+  <main class="w-full max-w-md flex flex-col items-center justify-center z-10 my-auto gap-8">
+    <div class="text-center space-y-1">
+      <p class="text-[10px] font-mono uppercase tracking-[0.3em] text-white/40">Toplam Skor</p>
+      <div id="counter" class="text-6xl font-black font-mono tracking-tighter text-green-400" style="text-shadow: 0 0 20px rgba(34, 197, 94, 0.4);">
+        0
       </div>
-      <button onclick="location.reload()" class="w-full bg-white/10 hover:bg-white/20 py-3 rounded-xl text-xs font-semibold">
-        Sistemi Yeniden Başlat
-      </button>
     </div>
 
+    <!-- TIKLA Yazılı Ana Buton -->
+    <div id="main-btn" onmousedown="handleClick()" ontouchstart="handleClick(event)" class="click-button w-44 h-44 rounded-full flex items-center justify-center cursor-pointer select-none">
+      <span class="text-lg font-mono font-bold tracking-widest text-green-400 pointer-events-none">TIKLA</span>
+    </div>
+  </main>
+
+  <div class="w-full max-w-md h-8 z-10"></div>
+
+  <!-- LİDERLİK TABLOSU MODALI -->
+  <div id="lb-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div class="glass w-full max-w-md p-6 rounded-3xl flex flex-col max-h-[80vh] border border-white/20">
+      <div class="flex justify-between items-center mb-4 pb-3 border-b border-white/10">
+        <h3 class="text-sm font-bold font-mono text-green-400 tracking-wider">🏆 CANLI SIRALAMA</h3>
+        <button onclick="closeLeaderboard()" class="text-white/50 hover:text-white font-mono text-xl">✕</button>
+      </div>
+
+      <div id="name-box" class="mb-4 hidden">
+        <p class="text-[11px] text-white/60 mb-2 font-mono">Listeye adını yazdır:</p>
+        <div class="flex gap-2">
+          <input id="user-input" type="text" maxlength="15" placeholder="İsminiz..." class="glass px-3 py-2 text-xs text-white outline-none focus:border-green-400 flex-1 rounded-xl font-mono">
+          <button onclick="saveName()" class="bg-green-500 hover:bg-green-600 text-black font-bold px-4 py-2 rounded-xl text-xs font-mono">Kaydet</button>
+        </div>
+      </div>
+
+      <div id="lb-list" class="flex-1 overflow-y-auto space-y-2 pr-1 font-mono text-xs">
+        <div class="text-center text-white/40 py-8">Yükleniyor...</div>
+      </div>
+
+      <div class="mt-3 pt-2 border-t border-white/5 text-center">
+        <span id="countdown-text" class="text-[10px] font-mono text-white/30">Sonraki otomatik yenileme: 10s</span>
+      </div>
+    </div>
   </div>
 
   <script>
-    const trollMessages = [
-      "Bu kişi gruptaki tüm dedikoduları ilk yayan kişidir. Borç istenirse anında 'kanka cüzdanı evde unuttum' der.",
-      "Yapay zeka analizine göre bu arkadaşın en büyük hobisi plan yapıp son 5 dakika kala 'kanka ben gelemiyorum' demektir.",
-      "Son görülen verilerine göre mesajlara 6 saat sonra 'aaaa yeni gördüm kanka' yazma oranı %98.2'dir.",
-      "İnanılmaz derecede güvenilmez! Ismarladığı çayın bile hesabını 3 ay boyunca aklında tutar."
-    ];
+    const DB_URL = "https://kvdb.io/4y9X6p1kG9xN7Z3mQ8W2vL/apex_clicker_v2";
+    
+    let deviceId = localStorage.getItem('dev_id') || crypto.randomUUID();
+    localStorage.setItem('dev_id', deviceId);
+    let count = parseInt(localStorage.getItem('dev_cnt') || '0');
+    let userName = localStorage.getItem('dev_name') || '';
 
-    function startAnalysis() {
-      const name = document.getElementById('userName').value.trim();
-      if (!name) return alert('Lütfen adını yaz aga!');
+    const counterEl = document.getElementById('counter');
+    counterEl.innerText = count.toLocaleString('tr-TR');
 
-      document.getElementById('step1').classList.add('hidden');
-      document.getElementById('step2').classList.remove('hidden');
+    let particleSpeed = 1;
+    let countdownTimer = null;
+    let secondsLeft = 10;
 
-      const texts = [
-        "Galeri fotoğrafları taranıyor...",
-        "WhatsApp grup geçmişi inceleniyor...",
-        "Gözlemlenen gizli davranışlar hesaplanıyor...",
-        "Sonuç hazırlanıyor..."
-      ];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(700, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.04);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.04);
+    }
 
-      let i = 0;
-      const interval = setInterval(() => {
-        if (i < texts.length) {
-          document.getElementById('loadingText').innerText = texts[i];
-          i++;
-        } else {
-          clearInterval(interval);
-          showResult(name);
+    function handleClick(e) {
+      if (e) e.preventDefault();
+      count++;
+      counterEl.innerText = count.toLocaleString('tr-TR');
+      localStorage.setItem('dev_cnt', count);
+      playSound();
+      particleSpeed = 6;
+      syncData();
+
+      // JS ile Garantili Küçülme / Büyüme Efekti
+      const btn = document.getElementById('main-btn');
+      btn.style.transform = 'scale(0.85)';
+      setTimeout(() => {
+        btn.style.transform = 'scale(1)';
+      }, 80);
+    }
+
+    function openLeaderboard() {
+      document.getElementById('lb-modal').classList.remove('hidden');
+      if (!userName) {
+        document.getElementById('name-box').classList.remove('hidden');
+      } else {
+        document.getElementById('name-box').classList.add('hidden');
+      }
+      
+      loadLeaderboard();
+      startTimers();
+    }
+
+    function closeLeaderboard() {
+      document.getElementById('lb-modal').classList.add('hidden');
+      stopTimers();
+    }
+
+    function startTimers() {
+      stopTimers();
+      secondsLeft = 10;
+      updateCountdownUI();
+
+      countdownTimer = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+          loadLeaderboard();
+          secondsLeft = 10;
         }
+        updateCountdownUI();
       }, 1000);
     }
 
-    function showResult(name) {
-      document.getElementById('step2').classList.add('hidden');
-      document.getElementById('step3').classList.remove('hidden');
-      
-      document.getElementById('targetName').innerText = name;
-      // Rastgele bir troll mesajı seç
-      const randomTroll = trollMessages[Math.floor(Math.random() * trollMessages.length)];
-      document.getElementById('trollText').innerText = randomTroll;
+    function stopTimers() {
+      if (countdownTimer) clearInterval(countdownTimer);
     }
+
+    function updateCountdownUI() {
+      const el = document.getElementById('countdown-text');
+      if (el) el.innerText = `Sonraki otomatik yenileme: ${secondsLeft}s`;
+    }
+
+    function saveName() {
+      const val = document.getElementById('user-input').value.trim();
+      if (!val) return;
+      userName = val;
+      localStorage.setItem('dev_name', userName);
+      document.getElementById('name-box').classList.add('hidden');
+      
+      syncData().then(() => {
+        loadLeaderboard();
+        startTimers();
+      });
+    }
+
+    async function syncData() {
+      if (!userName) return;
+      try {
+        let list = [];
+        const res = await fetch(DB_URL);
+        if (res.ok) {
+          const text = await res.text();
+          if (text) list = JSON.parse(text);
+        }
+
+        const idx = list.findIndex(i => i.id === deviceId);
+        if (idx !== -1) {
+          list[idx].score = count;
+          list[idx].name = userName;
+        } else {
+          list.push({ id: deviceId, name: userName, score: count });
+        }
+        list.sort((a, b) => b.score - a.score);
+
+        await fetch(DB_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(list.slice(0, 30))
+        });
+      } catch (err) {}
+    }
+
+    async function loadLeaderboard() {
+      const container = document.getElementById('lb-list');
+      try {
+        const res = await fetch(DB_URL);
+        if (!res.ok) throw new Error();
+        const text = await res.text();
+        let list = text ? JSON.parse(text) : [];
+
+        if (!list || list.length === 0) {
+          container.innerHTML = `<div class="text-center text-white/40 py-8">Henüz kayıt yok. Tıklamaya başla!</div>`;
+          return;
+        }
+
+        container.innerHTML = list.map((item, i) => `
+          <div class="glass p-3 rounded-xl flex justify-between items-center ${item.id === deviceId ? 'border-green-500/50 bg-green-500/10' : 'border-white/10'}">
+            <div class="flex items-center gap-3">
+              <span class="font-bold ${i === 0 ? 'text-yellow-400' : i === 1 ? 'text-gray-300' : i === 2 ? 'text-amber-600' : 'text-white/40'}">#${i + 1}</span>
+              <span class="text-white">${item.name} ${item.id === deviceId ? '(Sen)' : ''}</span>
+            </div>
+            <span class="text-green-400 font-bold">${item.score.toLocaleString('tr-TR')}</span>
+          </div>
+        `).join('');
+      } catch (e) {
+        container.innerHTML = `
+          <div class="p-4 text-center space-y-2">
+            <p class="text-white/60 text-xs">Henüz sunucuda kayıt oluşturulmadı.</p>
+            <p class="text-green-400 text-xs font-bold">${userName ? userName + ': ' + count.toLocaleString('tr-TR') : 'İsmini kaydet ve ilk skoru sen gönder!'}</p>
+          </div>`;
+      }
+    }
+
+    const canvas = document.getElementById('space-canvas');
+    const ctx = canvas.getContext('2d');
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    let stars = Array.from({ length: 120 }, () => ({
+      x: (Math.random() - 0.5) * width * 2,
+      y: (Math.random() - 0.5) * height * 2,
+      z: Math.random() * width
+    }));
+
+    function animateSpace() {
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(0, 0, width, height);
+
+      const cx = width / 2;
+      const cy = height / 2;
+
+      particleSpeed = Math.max(1, particleSpeed * 0.95);
+
+      stars.forEach(s => {
+        s.z -= 1.5 * particleSpeed;
+        if (s.z <= 0) { s.z = width; s.x = (Math.random() - 0.5) * width * 2; s.y = (Math.random() - 0.5) * height * 2; }
+
+        const k = 120 / s.z;
+        const px = s.x * k + cx;
+        const py = s.y * k + cy;
+
+        if (px >= 0 && px < width && py >= 0 && py < height) {
+          const size = Math.max(0.5, (1 - s.z / width) * 2);
+          const alpha = (1 - s.z / width);
+
+          if (particleSpeed > 2) {
+            const tailX = (s.x * (120 / (s.z + particleSpeed * 4))) + cx;
+            const tailY = (s.y * (120 / (s.z + particleSpeed * 4))) + cy;
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.lineWidth = size;
+            ctx.moveTo(px, py);
+            ctx.lineTo(tailX, tailY);
+            ctx.stroke();
+          } else {
+            ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+            ctx.fillRect(px, py, size, size);
+          }
+        }
+      });
+      requestAnimationFrame(animateSpace);
+    }
+    animateSpace();
   </script>
 </body>
 </html>
